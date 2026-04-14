@@ -19,7 +19,7 @@ function showEmailAliasDialog(mode) {
   const html = template.evaluate()
       .setWidth(400)
       .setHeight(350);
-  SpreadsheetApp.getUi().showModalDialog(html, 'From which address you want to send the emails?');
+  SpreadsheetApp.getUi().showModalDialog(html, 'Email Merger');
 }
 
 /** Menu entry: show dropdown then send emails */
