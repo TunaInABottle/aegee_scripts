@@ -1,0 +1,112 @@
+<!-- EmailAliasDialog.html -->
+<!DOCTYPE html>
+<!--<html>
+      <body>
+        <form onsubmit="google.script.run.withSuccessHandler(closeDialog).processEmailAliasSelection(this.emailAlias.value);return false;">
+          <label for="emailAlias">Select from which address you want to send the email from:</label><br><br>
+          <select name="emailAlias" id="emailAlias">${optionsHTML}</select><br><br>
+          <input type="submit" value="Submit">
+        </form>
+        <script>
+          function closeDialog() {
+            google.script.host.close();
+          }
+        </script>
+      </body>
+    </html>`-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /* Add your improved styling here */
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f4f4f9;
+        margin: 0;
+      }
+      h2 {
+        color: #333;
+        text-align: center;
+      }
+      form {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 400px;
+        margin: 0 auto;
+      }
+      label {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        display: block;
+        margin-bottom: 8px;
+      }
+      select {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+        background-color: #fafafa;
+        transition: border-color 0.3s;
+      }
+      select:focus {
+        outline: none;
+        border-color: #0078d4;
+        background-color: #fff;
+      }
+      input[type="submit"] {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        background-color: #0078d4;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      input[type="submit"]:hover {
+        background-color: #005fa3;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+        color: #888;
+      }
+      .footer a {
+        color: #0078d4;
+        text-decoration: none;
+      }
+      .footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Select Email Alias</h2>
+    <form id="aliasForm" onsubmit="submitSelection(); return false;">
+      <label for="emailAlias">Choose the email alias:</label>
+      <select name="emailAlias" id="emailAlias" required>
+        <option value="" disabled selected>Select an email alias</option>
+        <? for (var i = 0; i < emailOptions.length; i++) { ?>
+          <option value="<?= emailOptions[i] ?>"><?= emailOptions[i] ?></option>
+        <? } ?>
+      </select>
+      <button type="submit">Submit</button>
+    </form>
+    <div class="footer">
+      <p>Powered by <a href="https://www.google.com" target="_blank">Google Apps Script</a></p>
+    </div>
+    <script>
+      function submitSelection() {
+        const selectedAlias = document.getElementById("emailAlias").value;
+        google.script.run
+          .withSuccessHandler(() => google.script.host.close())
+          .processEmailAliasSelectio
+
