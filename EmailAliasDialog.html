@@ -1,24 +1,7 @@
-<!-- EmailAliasDialog.html -->
-<!DOCTYPE html>
-<!--<html>
-      <body>
-        <form onsubmit="google.script.run.withSuccessHandler(closeDialog).processEmailAliasSelection(this.emailAlias.value);return false;">
-          <label for="emailAlias">Select from which address you want to send the email from:</label><br><br>
-          <select name="emailAlias" id="emailAlias">${optionsHTML}</select><br><br>
-          <input type="submit" value="Submit">
-        </form>
-        <script>
-          function closeDialog() {
-            google.script.host.close();
-          }
-        </script>
-      </body>
-    </html>`-->
 <!DOCTYPE html>
 <html>
   <head>
     <style>
-      /* Add your improved styling here */
       body {
         font-family: Arial, sans-serif;
         padding: 20px;
@@ -59,7 +42,7 @@
         border-color: #0078d4;
         background-color: #fff;
       }
-      input[type="submit"] {
+      button[type="submit"] {
         width: 100%;
         padding: 12px;
         font-size: 16px;
@@ -70,21 +53,14 @@
         cursor: pointer;
         transition: background-color 0.3s;
       }
-      input[type="submit"]:hover {
+      button[type="submit"]:hover {
         background-color: #005fa3;
       }
-      .footer {
+      #status {
         text-align: center;
-        margin-top: 20px;
+        margin-top: 12px;
         font-size: 14px;
-        color: #888;
-      }
-      .footer a {
-        color: #0078d4;
-        text-decoration: none;
-      }
-      .footer a:hover {
-        text-decoration: underline;
+        color: #555;
       }
     </style>
   </head>
@@ -98,15 +74,28 @@
           <option value="<?= emailOptions[i] ?>"><?= emailOptions[i] ?></option>
         <? } ?>
       </select>
-      <button type="submit">Submit</button>
+      <button type="submit" id="submitBtn">Submit</button>
     </form>
-    <div class="footer">
-      <p>Powered by <a href="https://www.google.com" target="_blank">Google Apps Script</a></p>
-    </div>
+    <div id="status"></div>
     <script>
       function submitSelection() {
         const selectedAlias = document.getElementById("emailAlias").value;
+        const btn = document.getElementById("submitBtn");
+        const status = document.getElementById("status");
+        btn.disabled = true;
+        btn.textContent = "Sending...";
+        status.textContent = "Processing, please wait...";
         google.script.run
-          .withSuccessHandler(() => google.script.host.close())
-          .processEmailAliasSelectio
-
+          .withSuccessHandler(function() {
+            google.script.host.close();
+          })
+          .withFailureHandler(function(err) {
+            btn.disabled = false;
+            btn.textContent = "Submit";
+            status.textContent = "Error: " + err.message;
+          })
+          .<?= callbackFunction ?>(selectedAlias);
+      }
+    </script>
+  </body>
+</html>

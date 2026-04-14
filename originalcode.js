@@ -41,8 +41,8 @@ const EMAIL_SENT_COL = "Email Sent";
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Mail Merge')
-      .addItem('Send Email samples', 'sendSampleEmails')
-      .addItem('Send Emails', 'sendEmails')
+      .addItem('Send Email samples', 'sendSampleEmailsFromDialog')
+      .addItem('Send Emails', 'sendEmailsFromDialog')
       .addToUi();
 }
 
