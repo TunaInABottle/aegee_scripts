@@ -16,13 +16,6 @@
         background: #ffffff;
       }
 
-      h2 {
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 20px;
-        color: #202124;
-      }
-
       .field {
         margin-bottom: 16px;
       }
@@ -118,6 +111,12 @@
         background: #1558b0;
       }
 
+      .btn-primary:disabled {
+        background: #aecbfa;
+        cursor: default;
+        box-shadow: none;
+      }
+
       .btn-secondary {
         background: #f1f3f4;
         color: #1a73e8;
@@ -127,22 +126,135 @@
         background: #e8eaed;
       }
 
-      #feedbackMessage {
+      /* Spinner */
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #dadce0;
+        border-top-color: #1a73e8;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .spinner-large {
+        width: 24px;
+        height: 24px;
+        border-width: 3px;
+      }
+
+      /* Confirmation area */
+      #confirmArea {
+        display: none;
+      }
+
+      .confirm-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #202124;
+        margin-bottom: 12px;
+      }
+
+      .body-list {
+        list-style: none;
+        margin-bottom: 16px;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #dadce0;
+        border-radius: 6px;
+        padding: 4px 0;
+      }
+
+      .body-list li {
+        padding: 8px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid #f1f3f4;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .body-list li:last-child {
+        border-bottom: none;
+      }
+
+      .body-list .body-icon {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #1a73e8;
+        flex-shrink: 0;
+      }
+
+      .confirm-preparing {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #5f6368;
+      }
+
+      /* Progress area */
+      #progressArea {
+        display: none;
+      }
+
+      .progress-bar-track {
+        width: 100%;
+        height: 8px;
+        background: #e8eaed;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: #1a73e8;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+
+      .progress-status {
         margin-top: 12px;
         font-size: 13px;
-        min-height: 20px;
-      }
-
-      .success {
-        color: #137333;
-      }
-
-      .error {
-        color: #c5221f;
-      }
-
-      .processing {
         color: #5f6368;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .progress-body-name {
+        margin-top: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #202124;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .progress-done {
+        color: #137333;
+        font-weight: 500;
+      }
+
+      #errorList {
+        margin-top: 12px;
+        font-size: 12px;
+        color: #c5221f;
+        max-height: 80px;
+        overflow-y: auto;
+      }
+
+      .error-item {
+        padding: 4px 0;
+        border-bottom: 1px solid #fce8e6;
       }
     </style>
   </head>
@@ -184,9 +296,28 @@
       </div>
     </form>
 
-    <p id="feedbackMessage"></p>
+    <div id="confirmArea">
+      <div id="confirmContent"></div>
+      <div class="actions">
+        <button type="button" class="btn-secondary" onclick="closeDialog()">Cancel</button>
+        <button type="button" class="btn-primary" id="startBtn" onclick="startSplit()">Start</button>
+      </div>
+    </div>
+
+    <div id="progressArea">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+      <div class="progress-status" id="progressStatus"></div>
+      <div class="progress-body-name" id="progressBody"></div>
+      <div id="errorList"></div>
+    </div>
 
     <script>
+      let pendingBodyNames = [];
+      let pendingMonth = "";
+      let pendingChildFolderId = "";
+
       // Default year: current year, unless it's January then prior year
       (function() {
         let now = new Date();
@@ -197,10 +328,8 @@
       // Default month: select the previous month
       (function() {
         let now = new Date();
-        // getMonth() is 0-based, previous month is (now - 1) mod 12
         let prevMonthIndex = (now.getMonth() + 11) % 12;
-        let monthSelect = document.getElementById("month");
-        monthSelect.selectedIndex = prevMonthIndex;
+        document.getElementById("month").selectedIndex = prevMonthIndex;
       })();
 
       function extractFolderId(input) {
@@ -209,39 +338,110 @@
         return match ? match[1] : input.trim();
       }
 
-      function submitForm() {
-        let feedbackMessage = document.getElementById("feedbackMessage");
-        let submitBtn = document.getElementById("submitBtn");
+      function showView(viewId) {
+        document.getElementById("inputForm").style.display = viewId === "form" ? "block" : "none";
+        document.getElementById("confirmArea").style.display = viewId === "confirm" ? "block" : "none";
+        document.getElementById("progressArea").style.display = viewId === "progress" ? "block" : "none";
+      }
 
+      function submitForm() {
         let form = document.getElementById("inputForm");
         let folderId = extractFolderId(form.folderId.value);
         let month = form.month.value;
         let year = parseInt(form.year.value);
 
         if (!folderId || !year) {
-          feedbackMessage.className = "error";
-          feedbackMessage.innerHTML = "Please provide a valid folder URL and year.";
+          alert("Please provide a valid folder URL and year.");
           return;
         }
 
-        submitBtn.disabled = true;
-        submitBtn.textContent = "Working...";
-        feedbackMessage.className = "processing";
-        feedbackMessage.innerHTML = "Splitting spreadsheet...";
+        // Show preparing spinner
+        showView("confirm");
+        document.getElementById("confirmContent").innerHTML =
+          '<div class="confirm-preparing"><div class="spinner spinner-large"></div>Reading data...</div>';
+        document.getElementById("startBtn").style.display = "none";
 
         google.script.run
-          .withSuccessHandler(function() {
-            feedbackMessage.className = "success";
-            feedbackMessage.innerHTML = "Done!";
-            setTimeout(closeDialog, 800);
+          .withSuccessHandler(function(result) {
+            pendingBodyNames = result.bodyNames;
+            pendingMonth = month;
+            pendingChildFolderId = result.childFolderId;
+            showConfirmation(result.bodyNames);
           })
           .withFailureHandler(function(error) {
-            feedbackMessage.className = "error";
-            feedbackMessage.innerHTML = "Error: " + error.message;
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Split";
+            document.getElementById("confirmContent").innerHTML =
+              '<div class="error-item"><strong>Error:</strong> ' + error.message + '</div>';
           })
-          .createSpreadsheetsFromFolderAndSpreadsheet(folderId, month, year);
+          .prepareSplit(folderId, month, year);
+      }
+
+      function showConfirmation(bodyNames) {
+        let html = '<div class="confirm-title">Found ' + bodyNames.length +
+          ' European Bod' + (bodyNames.length !== 1 ? 'ies' : 'y') + ':</div>';
+        html += '<ul class="body-list">';
+        for (let i = 0; i < bodyNames.length; i++) {
+          html += '<li><span class="body-icon"></span>' + bodyNames[i] + '</li>';
+        }
+        html += '</ul>';
+        document.getElementById("confirmContent").innerHTML = html;
+        document.getElementById("startBtn").style.display = "";
+      }
+
+      function startSplit() {
+        showView("progress");
+        processBodies(pendingBodyNames, pendingMonth, pendingChildFolderId, 0);
+      }
+
+      function processBodies(bodyNames, month, childFolderId, index) {
+        if (index >= bodyNames.length) {
+          // All done
+          document.getElementById("progressBar").style.width = "100%";
+          document.getElementById("progressBody").innerHTML = "";
+          document.getElementById("progressStatus").innerHTML = "";
+          let errorList = document.getElementById("errorList");
+          let errorCount = errorList.children.length;
+          let summary = "Done — " + (bodyNames.length - errorCount) + " of " + bodyNames.length + " created";
+          if (errorCount > 0) {
+            summary += " (" + errorCount + " failed)";
+          }
+          summary += ".";
+          document.getElementById("progressStatus").innerHTML = summary;
+          document.getElementById("progressStatus").className = "progress-status progress-done";
+          setTimeout(closeDialog, errorCount > 0 ? 4000 : 1200);
+          return;
+        }
+
+        let currentBody = bodyNames[index];
+        let total = bodyNames.length;
+        let pct = Math.round(((index) / total) * 100);
+        document.getElementById("progressBar").style.width = pct + "%";
+        document.getElementById("progressStatus").innerHTML =
+          '<div class="spinner"></div>' + (index + 1) + ' of ' + total;
+        document.getElementById("progressBody").innerHTML = currentBody;
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            let nextPct = Math.round(((index + 1) / total) * 100);
+            document.getElementById("progressBar").style.width = nextPct + "%";
+            if (!result.success) {
+              appendError(result.bodyName, result.error);
+            }
+            processBodies(bodyNames, month, childFolderId, index + 1);
+          })
+          .withFailureHandler(function(error) {
+            appendError(currentBody, error.message);
+            processBodies(bodyNames, month, childFolderId, index + 1);
+          })
+          .processBody(currentBody, month, childFolderId);
+      }
+
+      function appendError(bodyName, message) {
+        let errorList = document.getElementById("errorList");
+        let item = document.createElement("div");
+        item.className = "error-item";
+        item.innerHTML = "<strong>" + bodyName + ":</strong> " + message;
+        errorList.appendChild(item);
+        errorList.scrollTop = errorList.scrollHeight;
       }
 
       function closeDialog() {

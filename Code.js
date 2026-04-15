@@ -14,27 +14,33 @@ function onOpen() {
 function openDialog() {
   let htmlOutput = HtmlService.createHtmlOutputFromFile('Form')
     .setWidth(400)
-    .setHeight(280);
+    .setHeight(450);
   SpreadsheetApp.getUi().showModalDialog(htmlOutput, 'Data Splitter');
 }
 
 /**
- * Creates spreadsheets split by European Body, reading from the
- * "Data to move" sheet in the active spreadsheet and placing results
- * in a new child folder under the given parent folder.
+ * Quick-test entry point (bypasses the dialog).
+ */
+function myCreateSpreadsheet() {
+  prepareSplit("YOUR_DRIVE_FOLDER_ID", "August", 2026);
+}
+
+/**
+ * Reads the "Data to move" sheet, creates a child folder under the given
+ * parent, and returns the list of unique European Body names found.
  *
- * @param {string} folderId  - Google Drive folder ID (or full URL) where
- *                             the child folder will be created.
- * @param {string} month     - Full month name, e.g. "August".
+ * The child folder is named "{year}-{MM} (Delete 30 {delMonth} {delYear})".
+ * Does NOT create any spreadsheets — call processBody() for each name returned.
+ *
+ * @param {string} folderId - Google Drive folder ID where the child folder will be created.
+ * @param {string} month    - Full month name, e.g. "August".
  * @param {number|string} year - Four-digit year, e.g. 2026.
  *
- * @returns {void} Creates one spreadsheet per European Body inside a new
- *                 child folder named "{year}-{MM} (Delete 30 {delMonth} {delYear})".
- *
+ * @returns {{ bodyNames: string[], childFolderId: string }}
  * @throws {Error} If the sheet "Data to move" is not found.
  * @throws {Error} If no European Body column is found in the headers.
  */
-function createSpreadsheetsFromFolderAndSpreadsheet(folderId, month, year) {
+function prepareSplit(folderId, month, year) {
   const MONTHS = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
 
@@ -90,25 +96,76 @@ function createSpreadsheetsFromFolderAndSpreadsheet(folderId, month, year) {
     }
   }
 
-  for (let ebBody in ebBodies) {
-    let newSs = SpreadsheetApp.create("Open Call " + month + ": " + ebBody);
-    Logger.log("Creating SS -- " + month + " Result: " + ebBody);
+  return {
+    bodyNames: Object.keys(ebBodies),
+    childFolderId: childFolder.getId()
+  };
+}
+
+/**
+ * Creates a single spreadsheet for one European Body, reading from the
+ * "Data to move" sheet in the active spreadsheet.
+ *
+ * The new spreadsheet is moved into the specified child folder.
+ *
+ * @param {string} bodyName      - Exact European Body name to filter rows for.
+ * @param {string} month         - Full month name, used in the spreadsheet title.
+ * @param {string} childFolderId - Google Drive folder ID to place the result in.
+ *
+ * @returns {string} The name of the created spreadsheet.
+ * @throws {Error} If the sheet "Data to move" is not found.
+ */
+function processBody(bodyName, month, childFolderId) {
+  try {
+    let ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName("Data to move");
+    if (!sheet) {
+      throw new Error("Sheet 'Data to move' not found in this spreadsheet.");
+    }
+
+    let data = sheet.getDataRange().getValues();
+    let headers = data[0];
+
+    // Find EB body columns
+    let ebBodyIndex1 = headers.indexOf("Which European Body do you wish to apply for?");
+    let ebBodyIndex2 = headers.indexOf("To which European Body do you wish to apply for?");
+    let ebBodyIndexes = [];
+    if (ebBodyIndex1 !== -1) ebBodyIndexes.push(ebBodyIndex1);
+    if (ebBodyIndex2 !== -1 && ebBodyIndex1 !== ebBodyIndex2) ebBodyIndexes.push(ebBodyIndex2);
+
+    if (ebBodyIndexes.length === 0) {
+      throw new Error("Error: No European Body column found.");
+    }
+
+    // Collect rows matching this body
+    let rows = [];
+    for (let j = 0; j < ebBodyIndexes.length; j++) {
+      let ebBodyHeaderIdx = ebBodyIndexes[j];
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][ebBodyHeaderIdx] === bodyName) {
+          rows.push(data[i]);
+        }
+      }
+    }
+
+    // Create spreadsheet
+    let newSs = SpreadsheetApp.create("Open Call " + month + ": " + bodyName);
+    Logger.log("Creating SS -- " + month + " Result: " + bodyName);
     let newSheet = newSs.getSheets()[0];
 
     newSheet.appendRow(headers);
-
-    let rows = ebBodies[ebBody];
     for (let r = 0; r < rows.length; r++) {
       newSheet.appendRow(rows[r]);
     }
 
+    // Bold headers, freeze first row
     let headerRange = newSheet.getRange(1, 1, 1, headers.length);
     headerRange.setFontWeight("bold");
     newSheet.setFrozenRows(1);
 
+    // Remove entirely empty columns
     let range = newSheet.getDataRange();
     let values = range.getValues();
-
     let emptyColumns = [];
     for (let col = 0; col < values[0].length; col++) {
       let empty = true;
@@ -122,13 +179,18 @@ function createSpreadsheetsFromFolderAndSpreadsheet(folderId, month, year) {
         emptyColumns.push(col);
       }
     }
-
     for (let k = emptyColumns.length - 1; k >= 0; k--) {
       newSheet.deleteColumn(emptyColumns[k] + 1);
     }
 
+    // Move file into the child folder
     let newFile = DriveApp.getFileById(newSs.getId());
-    childFolder.addFile(newFile);
+    DriveApp.getFolderById(childFolderId).addFile(newFile);
     DriveApp.getRootFolder().removeFile(newFile);
+
+    return { success: true, bodyName: bodyName };
+  } catch (e) {
+    Logger.log("Error processing '" + bodyName + "': " + e.message);
+    return { success: false, bodyName: bodyName, error: e.message };
   }
 }
