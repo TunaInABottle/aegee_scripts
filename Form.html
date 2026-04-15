@@ -256,6 +256,39 @@
         padding: 4px 0;
         border-bottom: 1px solid #fce8e6;
       }
+
+      .conflict-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #c5221f;
+        margin-bottom: 10px;
+      }
+
+      .conflict-list {
+        list-style: none;
+        font-size: 12px;
+        color: #c5221f;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #fce8e6;
+        border-radius: 6px;
+        padding: 4px 0;
+        margin-bottom: 16px;
+      }
+
+      .conflict-list li {
+        padding: 6px 12px;
+        border-bottom: 1px solid #fce8e6;
+      }
+
+      .conflict-list li:last-child {
+        border-bottom: none;
+      }
+
+      .conflict-row-label {
+        font-weight: 500;
+        color: #5f6368;
+      }
     </style>
   </head>
   <body>
@@ -366,6 +399,10 @@
 
         google.script.run
           .withSuccessHandler(function(result) {
+            if (result.conflict) {
+              showConflict(result.conflicts, result.missingEbRows);
+              return;
+            }
             pendingBodyNames = result.bodyNames;
             pendingMonth = month;
             pendingChildFolderId = result.childFolderId;
@@ -390,6 +427,40 @@
         document.getElementById("startBtn").style.display = "";
       }
 
+      function showConflict(conflicts, missingEbRows) {
+        let html = '';
+
+        if (conflicts.length > 0) {
+          html += '<div class="conflict-title">Conflicts found in ' + conflicts.length + ' row' +
+            (conflicts.length !== 1 ? 's' : '') + '</div>';
+          html += '<div style="font-size:13px; color:#5f6368; margin-bottom:8px;">' +
+            'Multiple different EB values in the same row:</div>';
+          html += '<ul class="conflict-list">';
+          for (let i = 0; i < conflicts.length; i++) {
+            let c = conflicts[i];
+            html += '<li><span class="conflict-row-label">Row ' + c.row + ':</span> ' +
+              c.values.join(' / ') + '</li>';
+          }
+          html += '</ul>';
+        }
+
+        if (missingEbRows && missingEbRows.length > 0) {
+          html += '<div class="conflict-title">Missing European Body in ' + missingEbRows.length + ' row' +
+            (missingEbRows.length !== 1 ? 's' : '') + '</div>';
+          html += '<div style="font-size:13px; color:#5f6368; margin-bottom:8px;">' +
+            'No EB value found in:</div>';
+          html += '<ul class="conflict-list">';
+          for (let i = 0; i < missingEbRows.length; i++) {
+            html += '<li><span class="conflict-row-label">Row ' + missingEbRows[i] + '</span></li>';
+          }
+          html += '</ul>';
+        }
+
+        html += '<div style="font-size:13px; color:#5f6368; margin-top:8px;">Fix these rows and try again.</div>';
+        document.getElementById("confirmContent").innerHTML = html;
+        document.getElementById("startBtn").style.display = "none";
+      }
+
       function startSplit() {
         showView("progress");
         processBodies(pendingBodyNames, pendingMonth, pendingChildFolderId, 0);
@@ -400,17 +471,34 @@
           // All done
           document.getElementById("progressBar").style.width = "100%";
           document.getElementById("progressBody").innerHTML = "";
-          document.getElementById("progressStatus").innerHTML = "";
           let errorList = document.getElementById("errorList");
           let errorCount = errorList.children.length;
-          let summary = "Done — " + (bodyNames.length - errorCount) + " of " + bodyNames.length + " created";
-          if (errorCount > 0) {
-            summary += " (" + errorCount + " failed)";
+
+          if (errorCount === 0) {
+            // Clear the source sheet
+            document.getElementById("progressStatus").innerHTML =
+              '<div class="spinner"></div>Clearing source data...';
+            google.script.run
+              .withSuccessHandler(function() {
+                document.getElementById("progressStatus").innerHTML = "Done — " + bodyNames.length +
+                  " spreadsheet" + (bodyNames.length !== 1 ? "s" : "") + " created. Source data cleared.";
+                document.getElementById("progressStatus").className = "progress-status progress-done";
+                document.getElementById("doneActions").style.display = "flex";
+              })
+              .withFailureHandler(function(err) {
+                document.getElementById("progressStatus").innerHTML = "Done — " + bodyNames.length +
+                  " created, but failed to clear source data: " + err.message;
+                document.getElementById("progressStatus").className = "progress-status progress-done";
+                document.getElementById("doneActions").style.display = "flex";
+              })
+              .clearSheet();
+          } else {
+            let summary = "Done — " + (bodyNames.length - errorCount) + " of " + bodyNames.length + " created";
+            summary += " (" + errorCount + " failed). Source data kept.";
+            document.getElementById("progressStatus").innerHTML = summary;
+            document.getElementById("progressStatus").className = "progress-status progress-done";
+            document.getElementById("doneActions").style.display = "flex";
           }
-          summary += ".";
-          document.getElementById("progressStatus").innerHTML = summary;
-          document.getElementById("progressStatus").className = "progress-status progress-done";
-          document.getElementById("doneActions").style.display = "flex";
           return;
         }
 
