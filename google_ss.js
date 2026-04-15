@@ -13,21 +13,30 @@
 function onEdit(e) {
   const range = e.range;
 
-  // Only react to single-cell edits in column B (2)
-  if (range.getColumn() !== 2) return;
+  // Only react to single-cell edits in column A
+  if (range.getColumn() !== 1) return;
   if (range.getNumRows() > 1 || range.getNumColumns() > 1) return;
 
   const row = range.getRow();
   if (row === 1) return; // skip header
 
-  const value = e.value;
-  if (!value) return;
+  const cell = e.value;
+  if (!cell) return;
 
-  // Match: [Other EBs][RESULTS] Open Call ..., [NO CANDIDATES][RESULTS] Open Call ..., [CD Approval][RESULTS] Open Call ...
-  if (!/^\[(Other EBs|NO CANDIDATES|CD Approval)\]\[RESULTS\] Open Call /.test(value)) return;
+  // Only trigger when column A cell is exactly "EB"
+  if (cell !== 'EB') return;
 
+  // Scan all rows: where col A is "EB" and col C is empty, set the VLOOKUP formula
   const sheet = e.source.getActiveSheet();
-  sheet.getRange(row, 3).setFormula(
-    `=IFERROR(VLOOKUP(H${row},'EB body Vlookup'!A$1:B, 2, False), "NO MATCH FOUND")`
-  );
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const data = sheet.getRange(2, 1, lastRow - 1, 3).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === 'EB' && data[i][2] === '') {
+      sheet.getRange(i + 2, 3).setFormula(
+        `=IFERROR(VLOOKUP(H${i + 2},'EB body Vlookup'!A$1:B, 2, False), "NO MATCH FOUND")`
+      );
+    }
+  }
 }
