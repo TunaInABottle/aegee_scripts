@@ -63,6 +63,42 @@ function prepareSplit(folderId, month, year) {
 
   let data = sheet.getDataRange().getValues();
   let headers = data[0];
+
+  // Copy the full data into the child folder as a single spreadsheet
+  let fullSs = SpreadsheetApp.create("Open Call " + month + " - All Data");
+  let fullSheet = fullSs.getSheets()[0];
+
+  for (let i = 0; i < data.length; i++) {
+    fullSheet.appendRow(data[i]);
+  }
+
+  let fullHeaderRange = fullSheet.getRange(1, 1, 1, headers.length);
+  fullHeaderRange.setFontWeight("bold");
+  fullSheet.setFrozenRows(1);
+
+  // Remove entirely empty columns
+  let fullValues = fullSheet.getDataRange().getValues();
+  let emptyCols = [];
+  for (let col = 0; col < fullValues[0].length; col++) {
+    let empty = true;
+    for (let row = 1; row < fullValues.length; row++) {
+      if (fullValues[row][col] !== "") {
+        empty = false;
+        break;
+      }
+    }
+    if (empty) {
+      emptyCols.push(col);
+    }
+  }
+  for (let k = emptyCols.length - 1; k >= 0; k--) {
+    fullSheet.deleteColumn(emptyCols[k] + 1);
+  }
+
+  let fullFile = DriveApp.getFileById(fullSs.getId());
+  childFolder.addFile(fullFile);
+  DriveApp.getRootFolder().removeFile(fullFile);
+
   let ebBodyIndex1 = headers.indexOf("Which European Body do you wish to apply for?");
   let ebBodyIndex2 = headers.indexOf("To which European Body do you wish to apply for?");
 

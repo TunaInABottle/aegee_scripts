@@ -311,6 +311,9 @@
       <div class="progress-status" id="progressStatus"></div>
       <div class="progress-body-name" id="progressBody"></div>
       <div id="errorList"></div>
+      <div class="actions" id="doneActions" style="display:none;">
+        <button type="button" class="btn-primary" onclick="closeDialog()">Close</button>
+      </div>
     </div>
 
     <script>
@@ -407,7 +410,7 @@
           summary += ".";
           document.getElementById("progressStatus").innerHTML = summary;
           document.getElementById("progressStatus").className = "progress-status progress-done";
-          setTimeout(closeDialog, errorCount > 0 ? 4000 : 1200);
+          document.getElementById("doneActions").style.display = "flex";
           return;
         }
 
