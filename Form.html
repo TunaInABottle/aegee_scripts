@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!--<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <form id="inputForm">
+      <label for="folderId">Folder ID:</label>
+      <input type="text" id="folderId" name="folderId"><br><br>
+      <label for="spreadsheetId">Spreadsheet ID:</label>
+      <input type="text" id="spreadsheetId" name="spreadsheetId"><br><br>
+      <label for="month">Month (e.g. July):</label>
+      <input type="text" id="month" name="month"><br><br>
+      <input type="button" value="Submit" onclick="submitForm()">
+    </form>
+    <script>
+      function submitForm() {
+        let form = document.getElementById("inputForm");
+        let folderId = form.folderId.value;
+        let spreadsheetId = form.spreadsheetId.value;
+        let month = form.month.value;
+        google.script.run.withSuccessHandler(closeDialog).createSpreadsheetsFromFolderAndSpreadsheet(folderId, spreadsheetId, month);
+      }
+      function closeDialog() {
+        google.script.host.close();
+      }
+    </script>
+  </body>
+</html>
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+    <form id="inputForm">
+      <label for="folderId">Folder ID:</label><br>
+      <input type="text" id="folderId" name="folderId" style="width: 80%; display: inline-block;"><br>
+      <label for="spreadsheetId" >Spreadsheet ID:</label><br>
+      <input type="text" id="spreadsheetId" name="spreadsheetId" style="width: 80%; display: inline-block;"><br>
+      <label for="month">Month:</label><br>
+      <select id="month" name="month">
+        <option value="January">January</option>
+        <option value="February">February</option>
+        <option value="March">March</option>
+        <option value="April">April</option>
+        <option value="May">May</option>
+        <option value="June">June</option>
+        <option value="July">July</option>
+        <option value="August">August</option>
+        <option value="September">September</option>
+        <option value="October">October</option>
+        <option value="November">November</option>
+        <option value="December">December</option>
+      </select><br><br>
+      <input type="button" value="Submit" onclick="submitForm()">
+    </form>
+    
+    <!-- Feedback message area -->
+    <p id="feedbackMessage"></p>
+    
+    <script>
+      function submitForm() {
+        // Get the feedback message element
+        let feedbackMessage = document.getElementById("feedbackMessage");
+        
+        // Show a "Processing..." message when the form is submitted
+        feedbackMessage.innerHTML = "Processing...";
+        
+        let form = document.getElementById("inputForm");
+        let folderId = form.folderId.value;
+        let spreadsheetId = form.spreadsheetId.value;
+        let month = form.month.value;
+
+        // Use the withSuccessHandler and withFailureHandler methods for feedback
+        google.script.run
+          .withSuccessHandler(function() {
+            feedbackMessage.innerHTML = "Form submitted successfully!";
+            closeDialog();
+          })
+          .withFailureHandler(function(error) {
+            feedbackMessage.innerHTML = "Error: " + error.message;
+          })
+          .createSpreadsheetsFromFolderAndSpreadsheet(folderId, spreadsheetId, month);
+      }
+      
+      function closeDialog() {
+        google.script.host.close();
+      }
+    </script>
+  </body>
+</html>
