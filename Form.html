@@ -1,90 +1,249 @@
 <!DOCTYPE html>
-<!--<html>
-  <head>
-    <base target="_top">
-  </head>
-  <body>
-    <form id="inputForm">
-      <label for="folderId">Folder ID:</label>
-      <input type="text" id="folderId" name="folderId"><br><br>
-      <label for="spreadsheetId">Spreadsheet ID:</label>
-      <input type="text" id="spreadsheetId" name="spreadsheetId"><br><br>
-      <label for="month">Month (e.g. July):</label>
-      <input type="text" id="month" name="month"><br><br>
-      <input type="button" value="Submit" onclick="submitForm()">
-    </form>
-    <script>
-      function submitForm() {
-        let form = document.getElementById("inputForm");
-        let folderId = form.folderId.value;
-        let spreadsheetId = form.spreadsheetId.value;
-        let month = form.month.value;
-        google.script.run.withSuccessHandler(closeDialog).createSpreadsheetsFromFolderAndSpreadsheet(folderId, spreadsheetId, month);
-      }
-      function closeDialog() {
-        google.script.host.close();
-      }
-    </script>
-  </body>
-</html>
--->
-<!DOCTYPE html>
 <html>
   <head>
     <base target="_top">
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 24px;
+        color: #1a1a1a;
+        background: #ffffff;
+      }
+
+      h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #202124;
+      }
+
+      .field {
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        color: #5f6368;
+      }
+
+      input[type="text"], input[type="number"], select {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-family: inherit;
+        border: 1px solid #dadce0;
+        border-radius: 6px;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        color: #1a1a1a;
+        background: #fff;
+      }
+
+      input[type="text"]:focus, input[type="number"]:focus, select:focus {
+        border-color: #1a73e8;
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+      }
+
+      input[type="text"]::placeholder {
+        color: #9aa0a6;
+      }
+
+      input[type="number"] {
+        appearance: textfield;
+        -moz-appearance: textfield;
+      }
+
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235f6368' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+      }
+
+      .row {
+        display: flex;
+        gap: 12px;
+      }
+
+      .row .field {
+        flex: 1;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 24px;
+      }
+
+      button {
+        padding: 9px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: inherit;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.15s, box-shadow 0.15s;
+      }
+
+      .btn-primary {
+        background: #1a73e8;
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: #1765cc;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      }
+
+      .btn-primary:active {
+        background: #1558b0;
+      }
+
+      .btn-secondary {
+        background: #f1f3f4;
+        color: #1a73e8;
+      }
+
+      .btn-secondary:hover {
+        background: #e8eaed;
+      }
+
+      #feedbackMessage {
+        margin-top: 12px;
+        font-size: 13px;
+        min-height: 20px;
+      }
+
+      .success {
+        color: #137333;
+      }
+
+      .error {
+        color: #c5221f;
+      }
+
+      .processing {
+        color: #5f6368;
+      }
+    </style>
   </head>
   <body>
     <form id="inputForm">
-      <label for="folderId">Folder ID:</label><br>
-      <input type="text" id="folderId" name="folderId" style="width: 80%; display: inline-block;"><br>
-      <label for="spreadsheetId" >Spreadsheet ID:</label><br>
-      <input type="text" id="spreadsheetId" name="spreadsheetId" style="width: 80%; display: inline-block;"><br>
-      <label for="month">Month:</label><br>
-      <select id="month" name="month">
-        <option value="January">January</option>
-        <option value="February">February</option>
-        <option value="March">March</option>
-        <option value="April">April</option>
-        <option value="May">May</option>
-        <option value="June">June</option>
-        <option value="July">July</option>
-        <option value="August">August</option>
-        <option value="September">September</option>
-        <option value="October">October</option>
-        <option value="November">November</option>
-        <option value="December">December</option>
-      </select><br><br>
-      <input type="button" value="Submit" onclick="submitForm()">
-    </form>
-    
-    <!-- Feedback message area -->
-    <p id="feedbackMessage"></p>
-    
-    <script>
-      function submitForm() {
-        // Get the feedback message element
-        let feedbackMessage = document.getElementById("feedbackMessage");
-        
-        // Show a "Processing..." message when the form is submitted
-        feedbackMessage.innerHTML = "Processing...";
-        
-        let form = document.getElementById("inputForm");
-        let folderId = form.folderId.value;
-        let spreadsheetId = form.spreadsheetId.value;
-        let month = form.month.value;
+      <div class="field">
+        <label for="folderId">Folder URL</label>
+        <input type="text" id="folderId" name="folderId" placeholder="https://drive.google.com/drive/folders/...">
+      </div>
 
-        // Use the withSuccessHandler and withFailureHandler methods for feedback
+      <div class="row">
+        <div class="field">
+          <label for="month">Month</label>
+          <select id="month" name="month">
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="year">Year</label>
+          <input type="number" id="year" name="year">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" onclick="closeDialog()">Cancel</button>
+        <button type="button" class="btn-primary" id="submitBtn" onclick="submitForm()">Split</button>
+      </div>
+    </form>
+
+    <p id="feedbackMessage"></p>
+
+    <script>
+      // Default year: current year, unless it's January then prior year
+      (function() {
+        let now = new Date();
+        let defaultYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        document.getElementById("year").value = defaultYear;
+      })();
+
+      // Default month: select the previous month
+      (function() {
+        let now = new Date();
+        // getMonth() is 0-based, previous month is (now - 1) mod 12
+        let prevMonthIndex = (now.getMonth() + 11) % 12;
+        let monthSelect = document.getElementById("month");
+        monthSelect.selectedIndex = prevMonthIndex;
+      })();
+
+      function extractFolderId(input) {
+        if (/^[a-zA-Z0-9_-]+$/.test(input.trim())) return input.trim();
+        let match = input.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+        return match ? match[1] : input.trim();
+      }
+
+      function submitForm() {
+        let feedbackMessage = document.getElementById("feedbackMessage");
+        let submitBtn = document.getElementById("submitBtn");
+
+        let form = document.getElementById("inputForm");
+        let folderId = extractFolderId(form.folderId.value);
+        let month = form.month.value;
+        let year = parseInt(form.year.value);
+
+        if (!folderId || !year) {
+          feedbackMessage.className = "error";
+          feedbackMessage.innerHTML = "Please provide a valid folder URL and year.";
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Working...";
+        feedbackMessage.className = "processing";
+        feedbackMessage.innerHTML = "Splitting spreadsheet...";
+
         google.script.run
           .withSuccessHandler(function() {
-            feedbackMessage.innerHTML = "Form submitted successfully!";
-            closeDialog();
+            feedbackMessage.className = "success";
+            feedbackMessage.innerHTML = "Done!";
+            setTimeout(closeDialog, 800);
           })
           .withFailureHandler(function(error) {
+            feedbackMessage.className = "error";
             feedbackMessage.innerHTML = "Error: " + error.message;
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Split";
           })
-          .createSpreadsheetsFromFolderAndSpreadsheet(folderId, spreadsheetId, month);
+          .createSpreadsheetsFromFolderAndSpreadsheet(folderId, month, year);
       }
-      
+
       function closeDialog() {
         google.script.host.close();
       }
