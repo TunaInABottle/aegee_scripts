@@ -1,0 +1,12 @@
+# clasp local configuration (contains your personal script ID)
+.clasp.json
+.clasprc.json
+
+# Local personal configuration (contains your folder IDs)
+Config.js
+
+# Miscellaneous
+node_modules/
+.DS_Store
+Thumbs.db
+*.log

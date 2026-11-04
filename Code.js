@@ -20,9 +20,11 @@ function openDialog() {
 
 /**
  * Quick-test entry point (bypasses the dialog).
+ * Uses CONFIG.driveFolderId from the local Config.js file
+ * (see Config.example.js; Config.js is kept out of git via .gitignore).
  */
 function myCreateSpreadsheet() {
-  prepareSplit("YOUR_DRIVE_FOLDER_ID", "August", 2026);
+  prepareSplit(CONFIG.driveFolderId, "August", 2026);
 }
 
 /**
@@ -135,6 +137,34 @@ function dropPrivacyConsentColumns(headers, rows) {
 }
 
 /**
+ * Moves a file into a target folder by copying it there and trashing the original.
+ * Works on both My Drive and shared drives without requiring the Drive API service.
+ *
+ * @param {string} fileId         - ID of the file to move.
+ * @param {string} targetFolderId - ID of the destination folder.
+ */
+function moveFileToFolder(fileId, targetFolderId) {
+  let file = DriveApp.getFileById(fileId);
+  let targetFolder = DriveApp.getFolderById(targetFolderId);
+  file.makeCopy(file.getName(), targetFolder);
+  file.setTrashed(true);
+}
+
+/**
+ * Deletes a folder and trashes all its contents.
+ *
+ * @param {string} folderId - ID of the folder to delete.
+ */
+function deleteFolder(folderId) {
+  let folder = DriveApp.getFolderById(folderId);
+  let files = folder.getFiles();
+  while (files.hasNext()) {
+    files.next().setTrashed(true);
+  }
+  folder.setTrashed(true);
+}
+
+/**
  * Reads the "Data to move" sheet, creates a child folder under the given
  * parent, copies all data into it, and returns the list of unique European
  * Body names found after merging all EB columns.
@@ -229,15 +259,7 @@ function prepareSplit(folderId, month, year) {
 
   if (conflicts.length > 0 || missingEbRows.length > 0) {
     // Clean up the child folder we just created
-    let childFile = DriveApp.getFolderById(childFolder.getId());
-    let files = childFile.getFiles();
-    while (files.hasNext()) {
-      let f = files.next();
-      childFile.removeFile(f);
-      DriveApp.getRootFolder().addFile(f);
-      DriveApp.getRootFolder().removeFile(f);
-    }
-    parentFolder.removeFolder(childFile);
+    deleteFolder(childFolder.getId());
 
     return { conflict: true, conflicts: conflicts, missingEbRows: missingEbRows };
   }
@@ -286,9 +308,7 @@ function prepareSplit(folderId, month, year) {
     fullSheet.deleteColumn(emptyCols[k] + 1);
   }
 
-  let fullFile = DriveApp.getFileById(fullSs.getId());
-  childFolder.addFile(fullFile);
-  DriveApp.getRootFolder().removeFile(fullFile);
+  moveFileToFolder(fullSs.getId(), childFolder.getId());
 
   return {
     bodyNames: Object.keys(ebBodies),
@@ -378,9 +398,7 @@ function processBody(bodyName, month, childFolderId) {
     }
 
     // Move file into the child folder
-    let newFile = DriveApp.getFileById(newSs.getId());
-    DriveApp.getFolderById(childFolderId).addFile(newFile);
-    DriveApp.getRootFolder().removeFile(newFile);
+    moveFileToFolder(newSs.getId(), childFolderId);
 
     return { success: true, bodyName: bodyName };
   } catch (e) {
