@@ -1,0 +1,2 @@
+# Files that live in the repo but must not be pushed to Apps Script
+Config.example.js
