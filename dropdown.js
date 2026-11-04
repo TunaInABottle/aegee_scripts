@@ -1,4 +1,64 @@
-// source: https://stackoverflow.com/questions/52981008/how-to-create-a-dropdown-prompt-in-google-app-script
+/**
+ * HRC Email Merger — a Gmail mail merge driven by a Google Sheet.
+ *
+ * Adapted from Google's mail-merge sample by Martin Hawksey:
+ *   https://developers.google.com/apps-script/samples/automations/mail-merge
+ *   Copyright 2022 Martin Hawksey
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Modified by TunaInABottle.
+ *
+ * References:
+ *   - modal dialog with a dropdown fed from an array (used here)
+ *     https://stackoverflow.com/questions/75636112/a-modal-dialog-box-with-some-text-a-drop-down-that-takes-values-from-an-array-a
+ *   - dropdown-in-prompt/sidebar approaches (not used, kept for reference)
+ *     https://stackoverflow.com/questions/52981008/how-to-create-a-dropdown-prompt-in-google-app-script
+ *     https://stackoverflow.com/questions/32902865/how-to-create-a-drop-down-list-in-input-box
+ *
+ * @OnlyCurrentDoc
+ */
+
+/**
+ * Change these to match the column names you are using for the email
+ * recipient address, subject and email-sent columns.
+ */
+const RECIPIENT_COL  = "Recipient";
+const SUBJECT_COL    = "Email subject";
+const CC_COL         = "cc";
+const BCC_COL        = "bcc";
+const EMAIL_SENT_COL = "Email Sent";
+
+/**
+ * Creates the "Mail Merge" menu for the user to run the scripts from.
+ */
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('Mail Merge')
+      .addItem('Send Email samples', 'sendSampleEmailsFromDialog')
+      .addItem('Send Emails', 'sendEmailsFromDialog')
+      .addToUi();
+}
+
+/** Menu entry: show the alias dropdown then send emails. */
+function sendEmailsFromDialog() {
+  showEmailAliasDialog('send');
+}
+
+/** Menu entry: show the alias dropdown then send sample emails. */
+function sendSampleEmailsFromDialog() {
+  showEmailAliasDialog('sample');
+}
 
 /**
  * Returns the user's email and all aliases.
@@ -22,16 +82,6 @@ function showEmailAliasDialog(mode) {
   SpreadsheetApp.getUi().showModalDialog(html, 'Email Merger');
 }
 
-/** Menu entry: show dropdown then send emails */
-function sendEmailsFromDialog() {
-  showEmailAliasDialog('send');
-}
-
-/** Menu entry: show dropdown then send sample emails */
-function sendSampleEmailsFromDialog() {
-  showEmailAliasDialog('sample');
-}
-
 /**
  * Returns info about pending (unsent) emails in the active sheet.
  * @return {{total: number, indices: number[], recipients: string[]}}
@@ -40,7 +90,6 @@ function getPendingEmailInfo() {
   const sheet = SpreadsheetApp.getActiveSheet();
   const data = sheet.getDataRange().getDisplayValues();
   const heads = data.shift();
-  const recipientIdx = heads.indexOf(RECIPIENT_COL);
   const obj = data.map(r => (heads.reduce((o, k, i) => (o[k] = r[i] || '', o), {})));
   const indices = [];
   const recipients = [];
@@ -153,4 +202,41 @@ function subjectFilter_(subject_line) {
       return element;
     }
   };
+}
+
+/**
+ * Fill template string with data object
+ * @see https://stackoverflow.com/a/378000/1027723
+ * @param {string} template string containing {{}} markers which are replaced with data
+ * @param {object} data object used to replace {{}} markers
+ * @return {object} message replaced with data
+ */
+function fillInTemplateFromObject_(template, data) {
+  // We have two templates one for plain text and the html body
+  // Stringifing the object means we can do a global replace
+  let template_string = JSON.stringify(template);
+
+  // Token replacement
+  template_string = template_string.replace(/{{[^{}]+}}/g, key => {
+    return escapeData_(data[key.replace(/[{}]+/g, "")] || "");
+  });
+  return JSON.parse(template_string);
+}
+
+/**
+ * Escape cell data to make JSON safe
+ * @see https://stackoverflow.com/a/9204218/1027723
+ * @param {string} str to escape JSON special characters from
+ * @return {string} escaped string
+ */
+function escapeData_(str) {
+  return str
+    .replace(/[\\]/g, '\\\\')
+    .replace(/[\\\"]/g, '\\\"')
+    .replace(/[\/]/g, '\\/')
+    .replace(/[\b]/g, '\\b')
+    .replace(/[\f]/g, '\\f')
+    .replace(/[\n]/g, '\\n')
+    .replace(/[\r]/g, '\\r')
+    .replace(/[\t]/g, '\\t');
 }

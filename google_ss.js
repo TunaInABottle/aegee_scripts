@@ -1,8 +1,9 @@
 
 /**
- * onEdit trigger: when a value in the "Email subject" column (B) matches
- * one of the RESULTS patterns, auto-fills the "Recipient" column (C) with
- * a VLOOKUP formula against the 'EB body Vlookup' sheet.
+ * onEdit trigger: when a cell in column A of the main data sheet is set to
+ * "EB", fills the "Recipient" column (C) of every still-pending EB row with
+ * an IFERROR(VLOOKUP(...)) formula that looks up the value in column H
+ * against the 'EB body Vlookup' sheet.
  *
  * NOTE: Install as an installable onEdit trigger via
  * Extensions > Apps Script > Triggers (clock icon) > Add Trigger:
@@ -26,8 +27,10 @@ function onEdit(e) {
   // Only trigger when column A cell is exactly "EB"
   if (cell !== 'EB') return;
 
-  // Scan all rows: where col A is "EB" and col C is empty, set the VLOOKUP formula
+  // Only run on the main data sheet (tabular data, not query sheets)
   const sheet = e.source.getActiveSheet();
+  const cellA1 = sheet.getRange(1, 1).getValue();
+  if (cellA1 === '') return;
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return;
 
@@ -35,7 +38,7 @@ function onEdit(e) {
   for (let i = 0; i < data.length; i++) {
     if (data[i][0] === 'EB' && data[i][2] === '') {
       sheet.getRange(i + 2, 3).setFormula(
-        `=IFERROR(VLOOKUP(H${i + 2},'EB body Vlookup'!A$1:B, 2, False), "NO MATCH FOUND")`
+        `=IFERROR(VLOOKUP(TRIM(H${i + 2}),'EB body Vlookup'!A$1:B, 2, False), "NO MATCH FOUND")`
       );
     }
   }
