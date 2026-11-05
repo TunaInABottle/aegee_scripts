@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 24px;
+        color: #1a1a1a;
+        background: #ffffff;
+      }
+
+      .field {
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        color: #5f6368;
+      }
+
+      input[type="text"], input[type="number"], select {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+        font-family: inherit;
+        border: 1px solid #dadce0;
+        border-radius: 6px;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        color: #1a1a1a;
+        background: #fff;
+      }
+
+      input[type="text"]:focus, input[type="number"]:focus, select:focus {
+        border-color: #1a73e8;
+        box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+      }
+
+      input[type="text"]::placeholder {
+        color: #9aa0a6;
+      }
+
+      input[type="number"] {
+        appearance: textfield;
+        -moz-appearance: textfield;
+      }
+
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235f6368' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+      }
+
+      .row {
+        display: flex;
+        gap: 12px;
+      }
+
+      .row .field {
+        flex: 1;
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 24px;
+      }
+
+      button {
+        padding: 9px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: inherit;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.15s, box-shadow 0.15s;
+      }
+
+      .btn-primary {
+        background: #1a73e8;
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: #1765cc;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      }
+
+      .btn-primary:active {
+        background: #1558b0;
+      }
+
+      .btn-primary:disabled {
+        background: #aecbfa;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      .btn-secondary {
+        background: #f1f3f4;
+        color: #1a73e8;
+      }
+
+      .btn-secondary:hover {
+        background: #e8eaed;
+      }
+
+      /* Spinner */
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #dadce0;
+        border-top-color: #1a73e8;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .spinner-large {
+        width: 24px;
+        height: 24px;
+        border-width: 3px;
+      }
+
+      /* Confirmation area */
+      #confirmArea {
+        display: none;
+      }
+
+      .confirm-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #202124;
+        margin-bottom: 12px;
+      }
+
+      .body-list {
+        list-style: none;
+        margin-bottom: 16px;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #dadce0;
+        border-radius: 6px;
+        padding: 4px 0;
+      }
+
+      .body-list li {
+        padding: 8px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid #f1f3f4;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .body-list li:last-child {
+        border-bottom: none;
+      }
+
+      .body-list .body-icon {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #1a73e8;
+        flex-shrink: 0;
+      }
+
+      .confirm-preparing {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: #5f6368;
+      }
+
+      /* Progress area */
+      #progressArea {
+        display: none;
+      }
+
+      .progress-bar-track {
+        width: 100%;
+        height: 8px;
+        background: #e8eaed;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: #1a73e8;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+
+      .progress-status {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #5f6368;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .progress-body-name {
+        margin-top: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #202124;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .progress-done {
+        color: #137333;
+        font-weight: 500;
+      }
+
+      #errorList {
+        margin-top: 12px;
+        font-size: 12px;
+        color: #c5221f;
+        max-height: 80px;
+        overflow-y: auto;
+      }
+
+      .error-item {
+        padding: 4px 0;
+        border-bottom: 1px solid #fce8e6;
+      }
+
+      .conflict-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #c5221f;
+        margin-bottom: 10px;
+      }
+
+      .conflict-list {
+        list-style: none;
+        font-size: 12px;
+        color: #c5221f;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #fce8e6;
+        border-radius: 6px;
+        padding: 4px 0;
+        margin-bottom: 16px;
+      }
+
+      .conflict-list li {
+        padding: 6px 12px;
+        border-bottom: 1px solid #fce8e6;
+      }
+
+      .conflict-list li:last-child {
+        border-bottom: none;
+      }
+
+      .conflict-row-label {
+        font-weight: 500;
+        color: #5f6368;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="inputForm">
+      <div class="field">
+        <label for="folderId">Folder URL</label>
+        <input type="text" id="folderId" name="folderId" placeholder="https://drive.google.com/drive/folders/...">
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="month">Month</label>
+          <select id="month" name="month">
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="year">Year</label>
+          <input type="number" id="year" name="year">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" onclick="closeDialog()">Cancel</button>
+        <button type="button" class="btn-primary" id="submitBtn" onclick="submitForm()">Split</button>
+      </div>
+    </form>
+
+    <div id="confirmArea">
+      <div id="confirmContent"></div>
+      <div class="actions">
+        <button type="button" class="btn-secondary" onclick="closeDialog()">Cancel</button>
+        <button type="button" class="btn-primary" id="startBtn" onclick="startSplit()">Start</button>
+      </div>
+    </div>
+
+    <div id="progressArea">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+      <div class="progress-status" id="progressStatus"></div>
+      <div class="progress-body-name" id="progressBody"></div>
+      <div id="errorList"></div>
+      <div class="actions" id="doneActions" style="display:none;">
+        <button type="button" class="btn-primary" onclick="closeDialog()">Close</button>
+      </div>
+    </div>
+
+    <script>
+      let pendingBodyNames = [];
+      let pendingMonth = "";
+      let pendingChildFolderId = "";
+
+      // Default year: current year, unless it's January then prior year
+      (function() {
+        let now = new Date();
+        let defaultYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+        document.getElementById("year").value = defaultYear;
+      })();
+
+      // Default month: select the previous month
+      (function() {
+        let now = new Date();
+        let prevMonthIndex = (now.getMonth() + 11) % 12;
+        document.getElementById("month").selectedIndex = prevMonthIndex;
+      })();
+
+      function extractFolderId(input) {
+        if (/^[a-zA-Z0-9_-]+$/.test(input.trim())) return input.trim();
+        let match = input.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+        return match ? match[1] : input.trim();
+      }
+
+      function showView(viewId) {
+        document.getElementById("inputForm").style.display = viewId === "form" ? "block" : "none";
+        document.getElementById("confirmArea").style.display = viewId === "confirm" ? "block" : "none";
+        document.getElementById("progressArea").style.display = viewId === "progress" ? "block" : "none";
+      }
+
+      function submitForm() {
+        let form = document.getElementById("inputForm");
+        let folderId = extractFolderId(form.folderId.value);
+        let month = form.month.value;
+        let year = parseInt(form.year.value);
+
+        if (!folderId || !year) {
+          alert("Please provide a valid folder URL and year.");
+          return;
+        }
+
+        // Show preparing spinner
+        showView("confirm");
+        document.getElementById("confirmContent").innerHTML =
+          '<div class="confirm-preparing"><div class="spinner spinner-large"></div>Reading data...</div>';
+        document.getElementById("startBtn").style.display = "none";
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            if (result.conflict) {
+              showConflict(result.conflicts, result.missingEbRows);
+              return;
+            }
+            pendingBodyNames = result.bodyNames;
+            pendingMonth = month;
+            pendingChildFolderId = result.childFolderId;
+            showConfirmation(result.bodyNames);
+          })
+          .withFailureHandler(function(error) {
+            document.getElementById("confirmContent").innerHTML =
+              '<div class="error-item"><strong>Error:</strong> ' + error.message + '</div>';
+          })
+          .prepareSplit(folderId, month, year);
+      }
+
+      function showConfirmation(bodyNames) {
+        let html = '<div class="confirm-title">Found ' + bodyNames.length +
+          ' European Bod' + (bodyNames.length !== 1 ? 'ies' : 'y') + ':</div>';
+        html += '<ul class="body-list">';
+        for (let i = 0; i < bodyNames.length; i++) {
+          html += '<li><span class="body-icon"></span>' + bodyNames[i] + '</li>';
+        }
+        html += '</ul>';
+        document.getElementById("confirmContent").innerHTML = html;
+        document.getElementById("startBtn").style.display = "";
+      }
+
+      function showConflict(conflicts, missingEbRows) {
+        let html = '';
+
+        if (conflicts.length > 0) {
+          html += '<div class="conflict-title">Conflicts found in ' + conflicts.length + ' row' +
+            (conflicts.length !== 1 ? 's' : '') + '</div>';
+          html += '<div style="font-size:13px; color:#5f6368; margin-bottom:8px;">' +
+            'Multiple different EB values in the same row:</div>';
+          html += '<ul class="conflict-list">';
+          for (let i = 0; i < conflicts.length; i++) {
+            let c = conflicts[i];
+            html += '<li><span class="conflict-row-label">Row ' + c.row + ':</span> ' +
+              c.values.join(' / ') + '</li>';
+          }
+          html += '</ul>';
+        }
+
+        if (missingEbRows && missingEbRows.length > 0) {
+          html += '<div class="conflict-title">Missing European Body in ' + missingEbRows.length + ' row' +
+            (missingEbRows.length !== 1 ? 's' : '') + '</div>';
+          html += '<div style="font-size:13px; color:#5f6368; margin-bottom:8px;">' +
+            'No EB value found in:</div>';
+          html += '<ul class="conflict-list">';
+          for (let i = 0; i < missingEbRows.length; i++) {
+            html += '<li><span class="conflict-row-label">Row ' + missingEbRows[i] + '</span></li>';
+          }
+          html += '</ul>';
+        }
+
+        html += '<div style="font-size:13px; color:#5f6368; margin-top:8px;">Fix these rows and try again.</div>';
+        document.getElementById("confirmContent").innerHTML = html;
+        document.getElementById("startBtn").style.display = "none";
+      }
+
+      function startSplit() {
+        showView("progress");
+        processBodies(pendingBodyNames, pendingMonth, pendingChildFolderId, 0);
+      }
+
+      function processBodies(bodyNames, month, childFolderId, index) {
+        if (index >= bodyNames.length) {
+          // All done
+          document.getElementById("progressBar").style.width = "100%";
+          document.getElementById("progressBody").innerHTML = "";
+          let errorList = document.getElementById("errorList");
+          let errorCount = errorList.children.length;
+
+          if (errorCount === 0) {
+            // Clear the source sheet
+            document.getElementById("progressStatus").innerHTML =
+              '<div class="spinner"></div>Clearing source data...';
+            google.script.run
+              .withSuccessHandler(function() {
+                document.getElementById("progressStatus").innerHTML = "Done — " + bodyNames.length +
+                  " spreadsheet" + (bodyNames.length !== 1 ? "s" : "") + " created. Source data cleared.";
+                document.getElementById("progressStatus").className = "progress-status progress-done";
+                document.getElementById("doneActions").style.display = "flex";
+              })
+              .withFailureHandler(function(err) {
+                document.getElementById("progressStatus").innerHTML = "Done — " + bodyNames.length +
+                  " created, but failed to clear source data: " + err.message;
+                document.getElementById("progressStatus").className = "progress-status progress-done";
+                document.getElementById("doneActions").style.display = "flex";
+              })
+              .clearSheet();
+          } else {
+            let summary = "Done — " + (bodyNames.length - errorCount) + " of " + bodyNames.length + " created";
+            summary += " (" + errorCount + " failed). Source data kept.";
+            document.getElementById("progressStatus").innerHTML = summary;
+            document.getElementById("progressStatus").className = "progress-status progress-done";
+            document.getElementById("doneActions").style.display = "flex";
+          }
+          return;
+        }
+
+        let currentBody = bodyNames[index];
+        let total = bodyNames.length;
+        let pct = Math.round(((index) / total) * 100);
+        document.getElementById("progressBar").style.width = pct + "%";
+        document.getElementById("progressStatus").innerHTML =
+          '<div class="spinner"></div>' + (index + 1) + ' of ' + total;
+        document.getElementById("progressBody").innerHTML = currentBody;
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            let nextPct = Math.round(((index + 1) / total) * 100);
+            document.getElementById("progressBar").style.width = nextPct + "%";
+            if (!result.success) {
+              appendError(result.bodyName, result.error);
+            }
+            processBodies(bodyNames, month, childFolderId, index + 1);
+          })
+          .withFailureHandler(function(error) {
+            appendError(currentBody, error.message);
+            processBodies(bodyNames, month, childFolderId, index + 1);
+          })
+          .processBody(currentBody, month, childFolderId);
+      }
+
+      function appendError(bodyName, message) {
+        let errorList = document.getElementById("errorList");
+        let item = document.createElement("div");
+        item.className = "error-item";
+        item.innerHTML = "<strong>" + bodyName + ":</strong> " + message;
+        errorList.appendChild(item);
+        errorList.scrollTop = errorList.scrollHeight;
+      }
+
+      function closeDialog() {
+        google.script.host.close();
+      }
+    </script>
+  </body>
+</html>
