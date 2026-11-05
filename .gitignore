@@ -1,0 +1,10 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# clasp global login (contains credentials — never commit)
+.clasprc.json
+
+# Node
+node_modules/
+*.log
