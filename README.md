@@ -1,8 +1,6 @@
 # aegee_scripts
 
-A monorepo of Google Apps Script automation tools, each project in its own
-subdirectory, each manageable independently with
-[clasp](https://github.com/google/clasp).
+A monorepo of Google Apps Script automation tools. I have used these scripts to automate boring tass and ease some processes within AEGEE association.
 
 | Project | Description |
 |---|---|
@@ -23,12 +21,6 @@ subdirectory, each manageable independently with
 
 ```bash
 cd <project>
-clasp login   # once per machine
-clasp push    # upload local files to Apps Script
+clasp login
+clasp push
 ```
-
-## History note
-
-Each project was originally a standalone git repository; the full commit
-history was merged into this monorepo with `git subtree add`, so every
-original commit is preserved under the project's prefix.
