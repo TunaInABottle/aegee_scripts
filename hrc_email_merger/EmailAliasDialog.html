@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f4f4f9;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+      h2 {
+        color: #333;
+        text-align: center;
+        margin-top: 0;
+      }
+      .step { display: none; }
+      .step.active { display: block; }
+
+      form {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      label {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        display: block;
+        margin-bottom: 8px;
+      }
+      select {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+        background-color: #fafafa;
+        box-sizing: border-box;
+      }
+      select:focus {
+        outline: none;
+        border-color: #0078d4;
+        background-color: #fff;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        background-color: #0078d4;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      button:hover { background-color: #005fa3; }
+      button:disabled { background-color: #aaa; cursor: not-allowed; }
+      button.secondary {
+        background-color: #ccc;
+        color: #333;
+        margin-top: 8px;
+      }
+      button.secondary:hover { background-color: #bbb; }
+
+      .info-box {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .info-box .count {
+        font-size: 28px;
+        font-weight: bold;
+        color: #0078d4;
+        margin: 4px 0;
+      }
+      .info-box .alias {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 12px;
+      }
+      .info-box .recipient-list {
+        text-align: left;
+        font-size: 13px;
+        color: #444;
+        max-height: 140px;
+        overflow-y: auto;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+      }
+      .info-box .recipient-list div {
+        padding: 2px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .info-box .recipient-list .more {
+        color: #888;
+        font-style: italic;
+      }
+
+      .progress-container {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .progress-bar-bg {
+        width: 100%;
+        height: 24px;
+        background-color: #e0e0e0;
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 16px 0;
+      }
+      .progress-bar {
+        height: 100%;
+        background-color: #0078d4;
+        width: 0%;
+        transition: width 0.3s;
+        border-radius: 12px;
+      }
+      .progress-text {
+        font-size: 16px;
+        color: #333;
+      }
+      .error-text {
+        font-size: 14px;
+        color: #d32f2f;
+        margin-top: 8px;
+      }
+
+      .summary-box {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .summary-box p {
+        font-size: 16px;
+        margin: 8px 0;
+      }
+      .summary-box .highlight {
+        font-size: 20px;
+        font-weight: bold;
+        color: #0078d4;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Step 1: Select alias -->
+    <div id="step-select" class="step active">
+      <h2>Select Email Alias</h2>
+      <form onsubmit="return checkCount();">
+        <label for="emailAlias">Choose the email alias:</label>
+        <select id="emailAlias" required>
+          <option value="" disabled selected>Select an email alias</option>
+          <? for (var i = 0; i < emailOptions.length; i++) { ?>
+            <option value="<?= emailOptions[i] ?>"><?= emailOptions[i] ?></option>
+          <? } ?>
+        </select>
+        <button type="submit" id="btnNext">Next</button>
+      </form>
+    </div>
+
+    <!-- Step 2: Confirmation -->
+    <div id="step-confirm" class="step">
+      <h2>Confirm Sending</h2>
+      <div class="info-box">
+        <div class="count" id="confirmCount"></div>
+        <p>email(s) will be sent</p>
+        <p class="alias" id="confirmAlias"></p>
+        <p class="alias" id="sampleNotice" style="display:none; color:#b36b00; font-weight:600;">SAMPLE mode — all emails will be delivered to the selected alias, not the original recipients.</p>
+        <div class="recipient-list" id="recipientList"></div>
+      </div>
+      <button onclick="startSending()">Confirm and Send</button>
+      <button class="secondary" onclick="goBack()">Back</button>
+    </div>
+
+    <!-- Step 3: Progress -->
+    <div id="step-progress" class="step">
+      <h2>Sending Emails...</h2>
+      <div class="progress-container">
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <p class="progress-text" id="progressText">Preparing...</p>
+        <p class="error-text" id="errorText"></p>
+      </div>
+    </div>
+
+    <!-- Step 4: Done -->
+    <div id="step-done" class="step">
+      <h2>Done!</h2>
+      <div class="summary-box">
+        <p class="highlight" id="summarySent"></p>
+        <p id="summaryErrors"></p>
+        <p id="summarySkipped"></p>
+      </div>
+      <button onclick="google.script.host.close()">Close</button>
+    </div>
+
+    <script>
+      var indices = [];
+      var alias = '';
+      var mode = '<?= mode ?>';
+      var currentIndex = 0;
+      var sentCount = 0;
+      var errorCount = 0;
+      var skippedCount = 0;
+      var seenSubjects = [];
+
+      function showStep(id) {
+        var steps = document.querySelectorAll('.step');
+        for (var i = 0; i < steps.length; i++) {
+          steps[i].classList.remove('active');
+        }
+        document.getElementById(id).classList.add('active');
+      }
+
+      function checkCount() {
+        alias = document.getElementById('emailAlias').value;
+        var btn = document.getElementById('btnNext');
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+
+        google.script.run
+          .withSuccessHandler(function(info) {
+            indices = info.indices;
+            if (info.total === 0) {
+              document.getElementById('summarySent').textContent = 'No pending emails found.';
+              showStep('step-done');
+              return;
+            }
+            document.getElementById('confirmCount').textContent = info.total;
+            document.getElementById('confirmAlias').textContent = 'From: ' + alias;
+            if (mode === 'sample') {
+              document.getElementById('sampleNotice').style.display = 'block';
+            }
+
+            var listEl = document.getElementById('recipientList');
+            listEl.innerHTML = '';
+            var showCount = Math.min(info.recipients.length, 8);
+            for (var i = 0; i < showCount; i++) {
+              var div = document.createElement('div');
+              div.textContent = info.recipients[i];
+              listEl.appendChild(div);
+            }
+            if (info.recipients.length > 8) {
+              var more = document.createElement('div');
+              more.className = 'more';
+              more.textContent = '... ' + (info.recipients.length - 8) + ' more ...';
+              listEl.appendChild(more);
+            }
+
+            showStep('step-confirm');
+          })
+          .withFailureHandler(function(err) {
+            btn.disabled = false;
+            btn.textContent = 'Next';
+            alert('Error: ' + err.message);
+          })
+          .getPendingEmailInfo();
+
+        return false;
+      }
+
+      function goBack() {
+        showStep('step-select');
+        var btn = document.getElementById('btnNext');
+        btn.disabled = false;
+        btn.textContent = 'Next';
+      }
+
+      function startSending() {
+        showStep('step-progress');
+        currentIndex = 0;
+        sentCount = 0;
+        errorCount = 0;
+        skippedCount = 0;
+        seenSubjects = [];
+        sendNext();
+      }
+
+      function sendNext() {
+        if (currentIndex >= indices.length) {
+          showComplete();
+          return;
+        }
+
+        google.script.run
+          .withSuccessHandler(function(result) {
+            if (result.status === 'sent') {
+              sentCount++;
+              if (result.subject) seenSubjects.push(result.subject);
+            } else if (result.status === 'error') {
+              errorCount++;
+            } else {
+              skippedCount++;
+            }
+            currentIndex++;
+            updateProgress();
+            sendNext();
+          })
+          .withFailureHandler(function(err) {
+            errorCount++;
+            currentIndex++;
+            updateProgress();
+            sendNext();
+          })
+          .sendSingleRow(alias, indices[currentIndex], mode, seenSubjects);
+      }
+
+      function updateProgress() {
+        var total = indices.length;
+        var pct = Math.round((currentIndex / total) * 100);
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressText').textContent = 'Processing ' + currentIndex + ' of ' + total + '...';
+        if (errorCount > 0) {
+          document.getElementById('errorText').textContent = errorCount + ' error(s)';
+        }
+      }
+
+      function showComplete() {
+        showStep('step-done');
+        document.getElementById('summarySent').textContent = sentCount + ' email(s) sent.';
+        document.getElementById('summaryErrors').textContent = errorCount > 0 ? errorCount + ' error(s)' : '';
+        document.getElementById('summarySkipped').textContent = skippedCount > 0 ? skippedCount + ' skipped' : '';
+      }
+    </script>
+  </body>
+</html>
