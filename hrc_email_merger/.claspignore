@@ -1,0 +1,12 @@
+# Excluded from clasp push/pull.
+# (clasp only syncs .js/.gs/.html/.json files, but these are listed
+# explicitly so they can never end up in the Apps Script project.)
+
+# The example declares CONFIG too; if it were synced alongside Config.js,
+# Apps Script fails with "SyntaxError: Identifier 'CONFIG' has already been
+# declared" (all script files share one global scope).
+Config.example.js
+
+# Personal configuration (contains folder IDs). Lives only in the Apps
+# Script project; never synced down to this local copy.
+Config.js
